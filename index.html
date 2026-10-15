@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Crisis Command</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: full-bleed command console; narrow column for student feed */
+:root{
+  --bg:#0b0d12; --panel:#12151d; --panel-2:#0e1118; --line:#1e2330; --line-soft:#171b26;
+  --ink:#e3e7f2; --mut:#8a93ab; --dim:#565f78;
+  --red:#e03e52; --red-dim:#2a1016; --amber:#e8a33d; --amber-dim:#2a2010;
+  --green:#46b878; --green-dim:#102a1a; --blue:#5a9adf;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+.wrap{max-width:960px;margin:0 auto;padding-block:22px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.narrow{max-width:700px}
+h1,h2{margin:0}
+button{font-family:var(--sans)}
+textarea,input,select{font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:9px 11px;width:100%;outline:none}
+textarea:focus,input:focus,select:focus{border-color:var(--dim)}
+textarea{resize:vertical;line-height:1.6}
+label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.hdr{background:var(--panel-2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
+.hdr-in{max-width:960px;margin:0 auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 8px rgba(224,62,82,.6);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}}
+.brand{font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.08em;color:var(--ink)}
+.pill{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:3px 9px;border-radius:4px;border:1px solid var(--line)}
+.pill.red{color:var(--red);background:var(--red-dim);border-color:#3a1620}
+.pill.blue{color:var(--blue);background:#101a28;border-color:#1c2a40}
+.pill.grey{color:var(--mut);background:var(--panel)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:16px}
+.eyebrow .n{color:var(--dim);letter-spacing:.06em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
+.btn{border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover:not(:disabled){background:#c93549}
+.btn-ghost{background:transparent;color:var(--mut);border:1px solid var(--line)}
+.btn-ghost:hover:not(:disabled){border-color:var(--dim);color:var(--ink)}
+.btn-sm{padding:4px 11px;font-size:11px;font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:12px;padding:5px 12px;border-radius:16px;border:1px solid var(--line);background:var(--panel-2);color:var(--mut);cursor:pointer;user-select:none}
+.chip.on{border-color:var(--red);background:var(--red-dim);color:var(--ink)}
+.chip .x{color:var(--dim);margin-left:6px;cursor:pointer}
+.chip .x:hover{color:var(--red)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:20px;overflow-x:auto}
+.tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);font-size:12px;font-family:var(--mono);letter-spacing:.04em;padding:10px 14px;cursor:pointer;white-space:nowrap}
+.tab.on{color:var(--ink);border-bottom-color:var(--red)}
+.tab .badge{background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:6px}
+.mono{font-family:var(--mono)}
+.time{font-family:var(--mono);font-size:10px;color:var(--dim);font-variant-numeric:tabular-nums}
+.toast{position:fixed;bottom:20px;right:20px;z-index:200;max-width:340px;border-radius:8px;padding:12px 16px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.5);border:1px solid}
+.toast.ok{background:var(--green-dim);color:var(--green);border-color:#1a4a2c}
+.toast.err{background:var(--red-dim);color:#ff8a98;border-color:#4a1a24}
+.toast.info{background:#101a28;color:var(--blue);border-color:#1c2a40}
+.sys{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:26px}
+.sys .s{font-family:var(--mono);font-size:10px;letter-spacing:.05em;padding:4px 11px;border-radius:4px;border:1px solid var(--line);color:var(--dim)}
+.sys .s.ok{color:var(--green);border-color:#1a4a2c}
+.sys .s.bad{color:var(--red);border-color:#4a1a24}
+.ev{border-left:2px solid var(--line);padding-left:14px;margin-bottom:16px}
+.ev.live{border-left-color:var(--red)}
+.ev.draft{opacity:.55;border-left-color:var(--amber)}
+.ev-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.ev-body{font-size:12px;color:var(--mut);line-height:1.55;white-space:pre-wrap}
+.feed-card{border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px;background:var(--panel)}
+.feed-card.fresh{box-shadow:0 0 0 1px var(--red),0 0 18px rgba(224,62,82,.18)}
+.feed-body{font-size:13px;line-height:1.75;color:#ccd2e4;white-space:pre-wrap;margin:10px 0 0}
+.resp-box{border-top:1px solid var(--line-soft);margin-top:14px;padding-top:14px}
+table.mx{border-collapse:collapse;width:100%;font-size:12px}
+table.mx th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+table.mx td{padding:7px 10px;border-bottom:1px solid var(--line-soft);color:var(--mut)}
+table.mx td.c{text-align:center}
+.scroll-x{overflow-x:auto}
+.ok-mark{color:var(--green);cursor:pointer;font-weight:600}
+.no-mark{color:#2a3042}
+.stat{text-align:center}
+.stat .v{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat .l{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.landing{min-height:72vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.hero-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--red);margin-bottom:12px}
+.hero-title{font-size:40px;font-weight:700;letter-spacing:-.02em;color:#fff;text-wrap:balance}
+.hero-sub{color:var(--dim);margin:8px 0 38px;font-size:14px}
+a{color:var(--blue)}
+.hidden{display:none!important}
+.detail{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:12px;margin-top:8px;font-size:12px;color:var(--mut);line-height:1.6;white-space:pre-wrap}
+.keybar{background:var(--amber-dim);border-bottom:1px solid #3a2c12}
+.keybar-in{max-width:960px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.keybar label{margin:0;color:var(--amber)}
+.keybar input{max-width:340px;flex:1;min-width:200px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toasts"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+"use strict";
+/* ───────────────────────── CONFIG ───────────────────────── */
+const SUPABASE_URL = "https://uinyubwilfvrtfmxpcnu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbnl1YndpbGZ2cnRmbXhwY251Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NjM0MjQsImV4cCI6MjA5ODIzOTQyNH0.ATEUY2suGwCRACThjhwvYL25U-V9qe3h2Pqa5n_kwaE";
+const AI_MODEL = "claude-sonnet-5-5";
+const CHANNELS = ["Corporate Email","Social Media","Press Release","Internal Memo"];
+const CH = {
+  "Corporate Email":{ic:"✉",color:"#5a9adf",bg:"#101a28",border:"#1c2a40"},
+  "Social Media":{ic:"◎",color:"#d9568a",bg:"#241019",border:"#3a1a2a"},
+  "Press Release":{ic:"¶",color:"#46b878",bg:"#102018",border:"#1a3a28"},
+  "Internal Memo":{ic:"▤",color:"#e8a33d",bg:"#241c0c",border:"#3a2c12"}
+};
+const SYSTEM_PROMPTS = {
+  "Corporate Email":"Write a realistic corporate email about this crisis event. Include Subject:, From:, and body. Max 180 words. Professional, factual tone appropriate to the sender.",
+  "Social Media":"Write a realistic social media post about this crisis event. Max 280 characters. Match the sender persona (angry customer, journalist, official account, etc.).",
+  "Press Release":"Write a realistic press release about this crisis event. Include FOR IMMEDIATE RELEASE, a headline, dateline, and 2-3 short paragraphs. Max 220 words.",
+  "Internal Memo":"Write a realistic internal memo about this crisis event. Include TO:, FROM:, RE:, and a concise body. Max 140 words. Direct and specific."
+};
+const DEFAULT_ROLES = ["CEO","CPO","CMO","CHRO","COO"];
+const DEFAULT_TEAMS = ["Alpha","Bravo","Charlie","Delta","Echo"];
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ───────────────────────── STATE ───────────────────────── */
+const S = {
+  mode:null,            // null | gm | student
+  sys:{db:"…",rt:"…"},  // system check
+  config:null,          // {id, roles[], teams[], scenario_context}
+  events:[],            // all events (gm) / published+visible (student)
+  responses:[],         // all responses (gm) / own (student)
+  // gm
+  tab:"fire", apiKey:"", gen:{busy:false, preview:null, channel:CHANNELS[0], sender:"", scenario:"", teams:[], roles:[]},
+  expanded:null, matrixDetail:null, resetArmed:false,
+  // student
+  team:null, role:null, chTab:"All", fresh:new Set(), drafts:{}, submitted:{},
+  subs:[]
+};
+try{ S.apiKey = sessionStorage.getItem("crisis_api_key") || ""; }catch(e){}
+try{ const id = JSON.parse(sessionStorage.getItem("crisis_identity")||"null"); if(id){S.team=id.team;S.role=id.role;} }catch(e){}
+
+/* ───────────────────────── UTIL ───────────────────────── */
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtT = t => new Date(t).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+const fmtDT = t => new Date(t).toLocaleString([],{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+function toast(msg,type){
+  const d=document.createElement("div");
+  d.className="toast "+(type||"ok"); d.textContent=msg;
+  document.getElementById("toasts").appendChild(d);
+  setTimeout(()=>d.remove(),3500);
+}
+function ping(){
+  try{
+    const c=new (window.AudioContext||window.webkitAudioContext)();
+    const o=c.createOscillator(),g=c.createGain();
+    o.connect(g); g.connect(c.destination);
+    o.frequency.value=740; g.gain.setValueAtTime(0.06,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.45);
+    o.start(); o.stop(c.currentTime+0.5);
+  }catch(e){}
+}
+function clearSubs(){ S.subs.forEach(ch=>{try{sb.removeChannel(ch);}catch(e){}}); S.subs=[]; }
+function visibleTo(ev,team,role){
+  const t = !ev.target_teams || !ev.target_teams.length || ev.target_teams.includes(team);
+  const r = !ev.target_roles || !ev.target_roles.length || ev.target_roles.includes(role);
+  return t && r;
+}
+
+/* ───────────────────────── DATA ───────────────────────── */
+async function loadConfig(){
+  const {data,error} = await sb.from("session_config").select("*").order("updated_at",{ascending:false}).limit(1);
+  if(error) throw error;
+  if(data && data.length){ S.config = data[0]; }
+  else{
+    const {data:ins,error:e2} = await sb.from("session_config")
+      .insert({roles:DEFAULT_ROLES,teams:DEFAULT_TEAMS,scenario_context:""}).select().single();
+    if(e2) throw e2;
+    S.config = ins;
+  }
+  if(!S.config.roles||!S.config.roles.length) S.config.roles=DEFAULT_ROLES.slice();
+  if(!S.config.teams||!S.config.teams.length) S.config.teams=DEFAULT_TEAMS.slice();
+}
+async function gmFetch(){
+  const [ev,re] = await Promise.all([
+    sb.from("game_events").select("*").order("created_at",{ascending:false}),
+    sb.from("team_responses").select("*").order("created_at",{ascending:true})
+  ]);
+  if(!ev.error) S.events = ev.data||[];
+  if(!re.error) S.responses = re.data||[];
+}
+async function studentFetch(){
+  const {data,error} = await sb.from("game_events").select("*").eq("is_published",true).order("created_at",{ascending:false});
+  if(!error) S.events = (data||[]).filter(e=>visibleTo(e,S.team,S.role));
+  const {data:mine} = await sb.from("team_responses").select("*").eq("team",S.team).eq("role",S.role);
+  (mine||[]).forEach(r=>{ S.submitted[r.event_id]=r.response; });
+}
+
+/* ───────────────────────── SYSTEM CHECK ───────────────────────── */
+async function sysCheck(){
+  try{
+    const {error} = await sb.from("session_config").select("id").limit(1);
+    S.sys.db = error ? ("ERROR: "+error.message) : "ok";
+  }catch(e){ S.sys.db = "ERROR: "+(e.message||"unreachable (project paused?)"); }
+  render();
+  const ch = sb.channel("syscheck-"+Math.random().toString(36).slice(2));
+  const timer = setTimeout(()=>{ S.sys.rt="timeout — check Supabase Realtime"; render(); },7000);
+  ch.subscribe(status=>{
+    if(status==="SUBSCRIBED"){ clearTimeout(timer); S.sys.rt="ok"; sb.removeChannel(ch); render(); }
+    else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){ clearTimeout(timer); S.sys.rt="ERROR"; render(); }
+  });
+}
+
+/* ───────────────────────── AI ───────────────────────── */
+async function callAI(system,userMsg){
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "x-api-key":S.apiKey,
+      "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true"
+    },
+    body:JSON.stringify({model:AI_MODEL,max_tokens:700,system,messages:[{role:"user",content:userMsg}]})
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data.content[0].text;
+}
+async function generate(){
+  const g=S.gen;
+  if(!g.scenario.trim()) return toast("Enter a crisis scenario first.","err");
+  if(!S.apiKey.trim())  return toast("Paste your Anthropic API key (top bar).","err");
+  g.busy=true; render();
+  try{
+    const ctx = S.config.scenario_context ? "Session background (keep every event consistent with it): "+S.config.scenario_context : "";
+    const roles = g.roles.length ? "This message is directed at the "+g.roles.join(", ")+"." : "";
+    const sys = SYSTEM_PROMPTS[g.channel]+"\n\n"+ctx+"\n"+roles+"\nOutput only the message itself, no commentary.";
+    g.preview = await callAI(sys,"Crisis event to communicate: "+g.scenario+(g.sender?("\nSender: "+g.sender):""));
+  }catch(e){ toast("Generation failed: "+e.message,"err"); }
+  g.busy=false; render();
+}
+async function generateConsequence(ev,resp){
+  if(!S.apiKey.trim()) return toast("Paste your Anthropic API key (top bar).","err");
+  const g=S.gen; g.busy=true; render();
+  try{
+    const ctx = S.config.scenario_context ? "Session background: "+S.config.scenario_context : "";
+    const sys = SYSTEM_PROMPTS[ev.channel]+"\n\n"+ctx+"\nYou are generating the realistic CONSEQUENCE of a team's crisis response. The consequence should plausibly follow from the quality and content of their response (a strong response earns calmer follow-up; a weak or evasive one escalates). Output only the message, no commentary.";
+    const user = "Original crisis event ("+ev.channel+", sender "+ev.sender+"):\n"+ev.content+
+      "\n\nThe team's "+resp.role+" responded:\n"+resp.response+
+      "\n\nGenerate the follow-up event this team now receives.";
+    g.preview = await callAI(sys,user);
+    g.channel = ev.channel; g.teams=[resp.team]; g.roles=[];
+    g.sender = ev.sender; g.scenario = "(consequence for Team "+resp.team+" — "+resp.role+"'s response)";
+    S.tab="fire";
+    toast("Consequence drafted for Team "+resp.team+" — review and publish.","info");
+  }catch(e){ toast("Failed: "+e.message,"err"); }
+  g.busy=false; render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ───────────────────────── GM ACTIONS ───────────────────────── */
+async function publish(asDraft){
+  const g=S.gen;
+  if(!g.preview) return;
+  const {error} = await sb.from("game_events").insert({
+    content:g.preview, channel:g.channel, sender:g.sender||"System",
+    is_published:!asDraft,
+    target_teams:g.teams.length?g.teams:null,
+    target_roles:g.roles.length?g.roles:null
+  });
+  if(error) return toast(error.message,"err");
+  toast(asDraft?"Saved as draft.":"Event is live.");
+  g.preview=null; g.scenario="";
+  await gmFetch(); render();
+}
+async function togglePub(ev){
+  const {error} = await sb.from("game_events").update({is_published:!ev.is_published}).eq("id",ev.id);
+  if(error) toast(error.message,"err");
+  await gmFetch(); render();
+}
+async function delEvent(id){
+  const {error} = await sb.from("game_events").delete().eq("id",id);
+  if(error) toast(error.message,"err");
+  await gmFetch(); render();
+}
+async function saveConfig(){
+  const c=S.config;
+  const {error} = await sb.from("session_config")
+    .update({roles:c.roles,teams:c.teams,scenario_context:c.scenario_context,updated_at:new Date().toISOString()})
+    .eq("id",c.id);
+  if(error) return toast(error.message,"err");
+  toast("Session setup saved.");
+}
+async function resetSession(){
+  if(!S.resetArmed){ S.resetArmed=true; render(); setTimeout(()=>{S.resetArmed=false;render();},4000); return; }
+  S.resetArmed=false;
+  const r1 = await sb.from("team_responses").delete().gte("created_at","1970-01-01");
+  const r2 = await sb.from("game_events").delete().gte("created_at","1970-01-01");
+  if(r1.error||r2.error) return toast((r1.error||r2.error).message,"err");
+  toast("All events and responses deleted. Setup kept.");
+  await gmFetch(); render();
+}
+function exportCSV(){
+  const rows=[["event_time","channel","sender","target_teams","target_roles","event_content","team","role","response","response_time","delay_seconds"]];
+  const pub = S.events.filter(e=>e.is_published);
+  pub.forEach(ev=>{
+    const rs = S.responses.filter(r=>r.event_id===ev.id);
+    if(!rs.length){
+      rows.push([ev.created_at,ev.channel,ev.sender,(ev.target_teams||[]).join("|"),(ev.target_roles||[]).join("|"),ev.content,"","","","",""]);
+    }
+    rs.forEach(r=>{
+      const d = Math.round((new Date(r.created_at)-new Date(ev.created_at))/1000);
+      rows.push([ev.created_at,ev.channel,ev.sender,(ev.target_teams||[]).join("|"),(ev.target_roles||[]).join("|"),ev.content,r.team,r.role,r.response,r.created_at,d]);
+    });
+  });
+  const csv = rows.map(r=>r.map(c=>'"'+String(c??"").replace(/"/g,'""').replace(/\n/g," ")+'"').join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"}));
+  a.download="crisis_session_"+new Date().toISOString().slice(0,10)+".csv";
+  a.click();
+}
+
+/* ───────────────────────── STUDENT ACTIONS ───────────────────────── */
+async function submitResponse(evId){
+  const text=(S.drafts[evId]||"").trim();
+  if(!text) return;
+  const {error} = await sb.from("team_responses").insert({event_id:evId,team:S.team,role:S.role,response:text});
+  if(error) return toast(error.message,"err");
+  S.submitted[evId]=text; delete S.drafts[evId];
+  toast("Response submitted.");
+  render();
+}
+
+/* ───────────────────────── REALTIME ───────────────────────── */
+function gmSubscribe(){
+  clearSubs();
+  const ch = sb.channel("gm-"+Math.random().toString(36).slice(2))
+    .on("postgres_changes",{event:"*",schema:"public",table:"game_events"},async()=>{ await gmFetch(); render(); })
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"team_responses"},async p=>{
+      await gmFetch();
+      const r=p.new; toast("Response in: Team "+r.team+" — "+r.role,"info"); ping();
+      render();
+    })
+    .subscribe();
+  S.subs.push(ch);
+}
+function studentSubscribe(){
+  clearSubs();
+  const ch = sb.channel("st-"+Math.random().toString(36).slice(2))
+    .on("postgres_changes",{event:"INSERT",schema:"public",table:"game_events"},p=>{
+      const ev=p.new;
+      if(!ev.is_published||!visibleTo(ev,S.team,S.role)) return;
+      S.events.unshift(ev); S.fresh.add(ev.id); ping(); flashTitle();
+      setTimeout(()=>{S.fresh.delete(ev.id);render();},6000);
+      render();
+    })
+    .on("postgres_changes",{event:"UPDATE",schema:"public",table:"game_events"},async()=>{ await studentFetch(); render(); })
+    .on("postgres_changes",{event:"DELETE",schema:"public",table:"game_events"},async()=>{ await studentFetch(); render(); })
+    .subscribe();
+  S.subs.push(ch);
+}
+let flashI=null;
+function flashTitle(){
+  if(flashI) clearInterval(flashI);
+  let n=0; const orig="Crisis Command";
+  flashI=setInterval(()=>{
+    document.title = (n%2? "⚠ INCOMING — ":"")+orig;
+    if(++n>7){clearInterval(flashI);flashI=null;document.title=orig;}
+  },700);
+}
+
+/* ───────────────────────── RENDER ───────────────────────── */
+function render(){
+  const app=$("#app");
+  if(S.mode==="gm") app.innerHTML=viewGM();
+  else if(S.mode==="student") app.innerHTML=S.team&&S.role?viewFeed():viewLogin();
+  else app.innerHTML=viewLanding();
+  bind();
+}
+
+function viewLanding(){
+  const s=S.sys;
+  const chip=(label,v)=>{
+    const cls = v==="ok"?"ok":(v==="…"?"":"bad");
+    const txt = v==="ok"?label+" connected":(v==="…"?label+" checking…":label+" "+v);
+    return '<span class="s '+cls+'">'+esc(txt)+'</span>';
+  };
+  return '<div class="wrap"><div class="landing">'+
+    '<div class="hero-eyebrow">AI-POWERED CRISIS SIMULATION</div>'+
+    '<h1 class="hero-title">Crisis Command</h1>'+
+    '<div class="hero-sub">Real pressure. Real decisions. Real consequences.</div>'+
+    '<div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center">'+
+      '<button class="btn btn-red" style="padding:13px 30px" data-a="gm">Game Master</button>'+
+      '<button class="btn btn-ghost" style="padding:13px 30px" data-a="student">Student</button>'+
+    '</div>'+
+    '<div class="sys">'+chip("database:",s.db)+chip("realtime:",s.rt)+'</div>'+
+  '</div></div>';
+}
+
+function viewLogin(){
+  const c=S.config||{teams:DEFAULT_TEAMS,roles:DEFAULT_ROLES};
+  return '<div class="wrap narrow"><div class="landing"><div class="card" style="width:100%;max-width:380px;text-align:left">'+
+    '<div class="eyebrow">Join the simulation</div>'+
+    '<div style="margin-bottom:14px"><label>Your team</label><select id="selTeam"><option value="">Select team…</option>'+
+      c.teams.map(t=>'<option'+(S.team===t?" selected":"")+'>'+esc(t)+'</option>').join("")+'</select></div>'+
+    '<div style="margin-bottom:18px"><label>Your role</label><select id="selRole"><option value="">Select role…</option>'+
+      c.roles.map(r=>'<option'+(S.role===r?" selected":"")+'>'+esc(r)+'</option>').join("")+'</select></div>'+
+    '<button class="btn btn-red" style="width:100%;justify-content:center;padding:12px 0" data-a="enter">Enter simulation</button>'+
+    '<div style="margin-top:14px;text-align:center"><button class="btn btn-ghost btn-sm" data-a="back">Back</button></div>'+
+  '</div></div></div>';
+}
+
+function headerGM(){
+  return '<div class="hdr"><div class="hdr-in">'+
+    '<span class="dot"></span><span class="brand">CRISIS COMMAND</span>'+
+    '<span class="pill red">GAME MASTER</span>'+
+    '<span style="flex:1"></span>'+
+    ["fire","matrix","setup","export"].map(t=>
+      '<button class="tab'+(S.tab===t?" on":"")+'" data-tab="'+t+'" style="border-bottom:none;padding:6px 10px">'+
+      ({fire:"⚡ Fire",matrix:"▦ Matrix",setup:"⚙ Setup",export:"⬇ Export"})[t]+'</button>').join("")+
+    '<button class="btn btn-ghost btn-sm" data-a="back">Exit</button>'+
+  '</div></div>'+
+  (!S.apiKey?'<div class="keybar"><div class="keybar-in"><label>Anthropic API key</label>'+
+    '<input id="apiKey" type="password" placeholder="sk-ant-… (kept only in this browser tab)">'+
+    '<button class="btn btn-ghost btn-sm" data-a="saveKey">Set</button></div></div>':"");
+}
+
+function viewGM(){
+  let body="";
+  if(S.tab==="fire") body=gmFire();
+  else if(S.tab==="matrix") body=gmMatrix();
+  else if(S.tab==="setup") body=gmSetup();
+  else body=gmExport();
+  return headerGM()+'<div class="wrap">'+body+'</div>';
+}
+
+function chipRow(options,selected,group){
+  return '<div class="chips">'+options.map(o=>
+    '<span class="chip'+(selected.includes(o)?" on":"")+'" data-chip="'+esc(o)+'" data-group="'+group+'">'+esc(o)+'</span>'
+  ).join("")+'</div>';
+}
+
+function gmFire(){
+  const g=S.gen, c=S.config;
+  const pub=S.events.filter(e=>e.is_published), dr=S.events.filter(e=>!e.is_published);
+  let h='<div class="card"><div class="eyebrow">Fire crisis event</div>'+
+    '<div class="grid2" style="margin-bottom:14px">'+
+      '<div><label>Channel</label><select id="gChannel">'+CHANNELS.map(x=>'<option'+(g.channel===x?" selected":"")+'>'+x+'</option>').join("")+'</select></div>'+
+      '<div><label>Sender</label><input id="gSender" value="'+esc(g.sender)+'" placeholder="e.g. @AngryCustomer, Reuters, CEO"></div>'+
+    '</div>'+
+    '<div class="grid2" style="margin-bottom:14px">'+
+      '<div><label>Target teams <span style="text-transform:none;letter-spacing:0;color:#3a4258">(none = all)</span></label>'+chipRow(c.teams,g.teams,"teams")+'</div>'+
+      '<div><label>Target roles <span style="text-transform:none;letter-spacing:0;color:#3a4258">(none = all)</span></label>'+chipRow(c.roles,g.roles,"roles")+'</div>'+
+    '</div>'+
+    '<div style="margin-bottom:14px"><label>Crisis scenario</label>'+
+      '<textarea id="gScenario" rows="3" placeholder="e.g. A journalist contacts the company asking for comment on the whistleblower allegations">'+esc(g.scenario)+'</textarea></div>'+
+    '<button class="btn btn-red" data-a="generate" '+(g.busy?"disabled":"")+'>'+(g.busy?"Generating…":"⚡ Generate")+'</button>';
+  if(g.preview!==null){
+    const tgt=(g.roles.length?" → "+g.roles.join(", "):"")+(g.teams.length?" · Team "+g.teams.join(", "):" · all teams");
+    h+='<div style="margin-top:18px;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:14px">'+
+      '<div class="mono" style="font-size:10px;color:var(--dim);letter-spacing:.08em;display:flex;justify-content:space-between;margin-bottom:10px">'+
+        '<span>PREVIEW — '+esc(g.channel)+esc(tgt)+'</span><span style="cursor:pointer" data-a="closePreview">✕</span></div>'+
+      '<textarea id="gPreview" rows="8">'+esc(g.preview)+'</textarea>'+
+      '<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">'+
+        '<button class="btn btn-red" data-a="pubNow">▲ Publish now</button>'+
+        '<button class="btn btn-ghost" data-a="pubDraft">Save draft</button>'+
+      '</div></div>';
+  }
+  h+='</div>';
+  // event log
+  h+='<div class="card"><div class="eyebrow">Event log <span class="n">'+pub.length+' live · '+dr.length+' draft</span></div>';
+  if(!S.events.length) h+='<div style="color:#3a4258;font-size:13px">No events yet. Generate your first crisis above.</div>';
+  S.events.forEach(ev=>{
+    const cc=CH[ev.channel]||{ic:"•",color:"#8a93ab",bg:"#1a1e2a",border:"#242a3a"};
+    const rs=S.responses.filter(r=>r.event_id===ev.id);
+    const open=S.expanded===ev.id;
+    h+='<div class="ev '+(ev.is_published?"live":"draft")+'">'+
+      '<div class="ev-head">'+
+        '<span class="pill" style="color:'+cc.color+';background:'+cc.bg+';border-color:'+cc.border+'">'+cc.ic+' '+esc(ev.channel)+'</span>'+
+        '<span style="font-size:11px;color:var(--dim)">'+esc(ev.sender)+'</span>'+
+        (ev.target_roles&&ev.target_roles.length?'<span class="pill blue">→ '+esc(ev.target_roles.join(", "))+'</span>':"")+
+        (ev.target_teams&&ev.target_teams.length?'<span class="pill grey">Team '+esc(ev.target_teams.join(", "))+'</span>':"")+
+        (!ev.is_published?'<span class="pill" style="color:var(--amber);background:var(--amber-dim);border-color:#3a2c12">DRAFT</span>':"")+
+        '<span class="time" style="margin-left:auto">'+fmtDT(ev.created_at)+'</span>'+
+        (rs.length?'<span class="pill" style="color:var(--green);background:var(--green-dim);border-color:#1a4a2c;cursor:pointer" data-expand="'+ev.id+'">'+rs.length+' response'+(rs.length>1?"s":"")+(open?" ▴":" ▾")+'</span>':"")+
+      '</div>'+
+      '<div class="ev-body">'+esc(ev.content.slice(0,200))+(ev.content.length>200?"…":"")+'</div>';
+    if(open){
+      rs.forEach(r=>{
+        h+='<div class="detail"><div style="display:flex;gap:8px;margin-bottom:6px;align-items:center">'+
+          '<strong style="color:var(--ink);font-size:11px">Team '+esc(r.team)+'</strong>'+
+          '<span class="mono" style="font-size:10px;color:var(--dim)">'+esc(r.role)+'</span>'+
+          '<span class="time" style="margin-left:auto">'+fmtT(r.created_at)+'</span></div>'+
+          esc(r.response)+
+          '<div style="margin-top:10px"><button class="btn btn-ghost btn-sm" style="color:var(--amber);border-color:#3a2c12" data-conseq="'+r.id+'" '+(S.gen.busy?"disabled":"")+'>⚡ Generate consequence for Team '+esc(r.team)+'</button></div>'+
+        '</div>';
+      });
+    }
+    h+='<div style="display:flex;gap:8px;margin-top:8px">'+
+      '<button class="btn btn-ghost btn-sm" data-toggle="'+ev.id+'">'+(ev.is_published?"⏸ Unpublish":"▶ Publish")+'</button>'+
+      '<button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:#3a1620" data-del="'+ev.id+'">Delete</button>'+
+    '</div></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+function gmMatrix(){
+  const pub=S.events.filter(e=>e.is_published);
+  let h='<div class="card"><div class="eyebrow">Response matrix <span class="n">who has responded to what</span></div>';
+  if(!pub.length) h+='<div style="color:#3a4258;font-size:13px">No published events yet.</div>';
+  pub.forEach(ev=>{
+    const cc=CH[ev.channel]||{ic:"•",color:"#8a93ab",bg:"#1a1e2a",border:"#242a3a"};
+    const rs=S.responses.filter(r=>r.event_id===ev.id);
+    const teams=ev.target_teams&&ev.target_teams.length?ev.target_teams:S.config.teams;
+    const roles=ev.target_roles&&ev.target_roles.length?ev.target_roles:S.config.roles;
+    h+='<div style="margin-bottom:26px">'+
+      '<div class="ev-head"><span class="pill" style="color:'+cc.color+';background:'+cc.bg+';border-color:'+cc.border+'">'+cc.ic+' '+esc(ev.channel)+'</span>'+
+      '<span style="font-size:11px;color:var(--dim)">'+esc(ev.sender)+'</span><span class="time">'+fmtDT(ev.created_at)+'</span></div>'+
+      '<div class="ev-body" style="margin-bottom:10px">'+esc(ev.content.slice(0,120))+'…</div>'+
+      '<div class="scroll-x"><table class="mx"><thead><tr><th>Team</th>'+roles.map(r=>'<th style="text-align:center">'+esc(r)+'</th>').join("")+'</tr></thead><tbody>';
+    teams.forEach(team=>{
+      h+='<tr><td>'+esc(team)+'</td>';
+      roles.forEach(role=>{
+        const r=rs.find(x=>x.team===team&&x.role===role);
+        h+='<td class="c">'+(r?'<span class="ok-mark" data-mx="'+r.id+'">✓</span>':'<span class="no-mark">—</span>')+'</td>';
+      });
+      h+='</tr>';
+    });
+    h+='</tbody></table></div>';
+    if(S.matrixDetail){
+      const r=rs.find(x=>x.id===S.matrixDetail);
+      if(r) h+='<div class="detail"><strong style="color:var(--ink)">Team '+esc(r.team)+' · '+esc(r.role)+'</strong> <span class="time">'+fmtT(r.created_at)+'</span><br><br>'+esc(r.response)+'</div>';
+    }
+    h+='</div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+function gmSetup(){
+  const c=S.config;
+  return '<div class="card"><div class="eyebrow">Scenario context</div>'+
+    '<label>Background fed to the AI with every generation — students never see this</label>'+
+    '<textarea id="cfgCtx" rows="4" placeholder="e.g. MegaCorp is a mid-size logistics firm. A whistleblower has leaked internal documents to the press. It is Monday 08:30.">'+esc(c.scenario_context||"")+'</textarea>'+
+  '</div>'+
+  '<div class="card"><div class="eyebrow">Roles</div><div class="chips" id="roleChips">'+
+    c.roles.map(r=>'<span class="chip on">'+esc(r)+'<span class="x" data-rmrole="'+esc(r)+'">✕</span></span>').join("")+
+    '</div><div style="margin-top:12px;max-width:320px"><input id="addRole" placeholder="Add role, press Enter"></div>'+
+  '</div>'+
+  '<div class="card"><div class="eyebrow">Teams</div><div class="chips" id="teamChips">'+
+    c.teams.map(t=>'<span class="chip on">'+esc(t)+'<span class="x" data-rmteam="'+esc(t)+'">✕</span></span>').join("")+
+    '</div><div style="margin-top:12px;max-width:320px"><input id="addTeam" placeholder="Add team, press Enter"></div>'+
+  '</div>'+
+  '<button class="btn btn-red" data-a="saveConfig" style="width:100%;justify-content:center;padding:12px 0">Save setup</button>'+
+  '<div class="card" style="margin-top:16px;border-color:#3a1620"><div class="eyebrow">Danger zone</div>'+
+    '<p style="font-size:12px;color:var(--dim);margin:0 0 12px">Deletes all events and responses. Keeps roles, teams, and context. Use between cohorts.</p>'+
+    '<button class="btn btn-ghost" style="color:var(--red);border-color:#3a1620" data-a="reset">'+(S.resetArmed?"Click again to confirm deletion":"Reset session data")+'</button>'+
+  '</div>';
+}
+
+function gmExport(){
+  const pub=S.events.filter(e=>e.is_published);
+  const teamsActive=[...new Set(S.responses.map(r=>r.team))].length;
+  return '<div class="card"><div class="eyebrow">Session export</div>'+
+    '<p style="font-size:13px;color:var(--dim);line-height:1.6;margin:0 0 20px">One row per response, joined to the event that triggered it, including response delay in seconds — for the post-session debrief and quality evaluation.</p>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;background:var(--panel-2);border-radius:8px;padding:16px;margin-bottom:20px">'+
+      '<div class="stat"><div class="v">'+pub.length+'</div><div class="l">events fired</div></div>'+
+      '<div class="stat"><div class="v">'+S.responses.length+'</div><div class="l">responses</div></div>'+
+      '<div class="stat"><div class="v">'+teamsActive+'</div><div class="l">teams active</div></div>'+
+    '</div>'+
+    '<button class="btn btn-red" data-a="csv" style="width:100%;justify-content:center;padding:12px 0">⬇ Download CSV</button>'+
+  '</div>';
+}
+
+function viewFeed(){
+  const tabs=["All",...CHANNELS];
+  const list=S.chTab==="All"?S.events:S.events.filter(e=>e.channel===S.chTab);
+  const freshBy={}; CHANNELS.forEach(c=>{freshBy[c]=S.events.filter(e=>e.channel===c&&S.fresh.has(e.id)).length;});
+  let h='<div class="hdr"><div class="hdr-in">'+
+    '<span class="dot"></span><span class="brand">CRISIS FEED</span>'+
+    '<span class="pill red">Team '+esc(S.team)+'</span><span class="pill blue">'+esc(S.role)+'</span>'+
+    '<span style="flex:1"></span><span class="time">'+S.events.length+' event'+(S.events.length!==1?"s":"")+'</span>'+
+    '<button class="btn btn-ghost btn-sm" data-a="switch">Switch</button>'+
+  '</div>'+
+  '<div class="hdr-in" style="padding-top:0;gap:0;overflow-x:auto">'+
+    tabs.map(t=>'<button class="tab'+(S.chTab===t?" on":"")+'" data-ch="'+esc(t)+'">'+
+      (t!=="All"&&CH[t]?CH[t].ic+" ":"")+esc(t)+
+      (t!=="All"&&freshBy[t]?'<span class="badge">'+freshBy[t]+'</span>':"")+'</button>').join("")+
+  '</div></div>';
+  h+='<div class="wrap narrow">';
+  if(!list.length) h+='<div style="text-align:center;color:#2a3042;margin-top:70px;font-size:13px"><div style="font-size:26px;margin-bottom:10px">▣</div>Monitoring all channels. No messages yet.</div>';
+  list.forEach(ev=>{
+    const cc=CH[ev.channel]||{ic:"•",color:"#8a93ab",bg:"#1a1e2a",border:"#242a3a"};
+    const done=S.submitted[ev.id];
+    h+='<div class="feed-card'+(S.fresh.has(ev.id)?" fresh":"")+'">'+
+      '<div class="ev-head">'+
+        '<span class="pill" style="color:'+cc.color+';background:'+cc.bg+';border-color:'+cc.border+'">'+cc.ic+' '+esc(ev.channel)+'</span>'+
+        '<span style="font-size:12px;color:var(--dim)">'+esc(ev.sender)+'</span>'+
+        '<span class="time" style="margin-left:auto">'+fmtT(ev.created_at)+'</span>'+
+      '</div>'+
+      '<div class="feed-body">'+esc(ev.content)+'</div>';
+    if(done!==undefined){
+      h+='<div class="resp-box"><div class="mono" style="font-size:10px;color:var(--green);letter-spacing:.1em;margin-bottom:6px">✓ RESPONSE SUBMITTED</div>'+
+        '<div style="font-size:12px;color:var(--dim);white-space:pre-wrap">'+esc(done)+'</div></div>';
+    }else{
+      h+='<div class="resp-box"><label>Your response</label>'+
+        '<textarea rows="4" data-draft="'+ev.id+'" placeholder="Type your response, then submit…">'+esc(S.drafts[ev.id]||"")+'</textarea>'+
+        '<div style="margin-top:10px"><button class="btn btn-red btn-sm" style="font-weight:600" data-submit="'+ev.id+'">Submit response</button></div></div>';
+    }
+    h+='</div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+/* ───────────────────────── EVENTS (DOM) ───────────────────────── */
+function bind(){
+  document.querySelectorAll("[data-a]").forEach(el=>el.onclick=()=>action(el.dataset.a));
+  document.querySelectorAll("[data-tab]").forEach(el=>el.onclick=()=>{S.tab=el.dataset.tab;S.matrixDetail=null;render();});
+  document.querySelectorAll("[data-ch]").forEach(el=>el.onclick=()=>{
+    S.chTab=el.dataset.ch;
+    S.events.filter(e=>S.chTab==="All"||e.channel===S.chTab).forEach(e=>S.fresh.delete(e.id));
+    render();
+  });
+  document.querySelectorAll("[data-chip]").forEach(el=>el.onclick=()=>{
+    const g=S.gen, v=el.dataset.chip, arr=el.dataset.group==="teams"?g.teams:g.roles;
+    const i=arr.indexOf(v); if(i>=0)arr.splice(i,1); else arr.push(v);
+    captureFire(); render();
+  });
+  document.querySelectorAll("[data-toggle]").forEach(el=>el.onclick=()=>{const ev=S.events.find(e=>e.id===el.dataset.toggle);if(ev)togglePub(ev);});
+  document.querySelectorAll("[data-del]").forEach(el=>el.onclick=()=>delEvent(el.dataset.del));
+  document.querySelectorAll("[data-expand]").forEach(el=>el.onclick=()=>{S.expanded=S.expanded===el.dataset.expand?null:el.dataset.expand;render();});
+  document.querySelectorAll("[data-conseq]").forEach(el=>el.onclick=()=>{
+    const r=S.responses.find(x=>x.id===el.dataset.conseq);
+    const ev=r&&S.events.find(e=>e.id===r.event_id);
+    if(r&&ev) generateConsequence(ev,r);
+  });
+  document.querySelectorAll("[data-mx]").forEach(el=>el.onclick=()=>{S.matrixDetail=S.matrixDetail===el.dataset.mx?null:el.dataset.mx;render();});
+  document.querySelectorAll("[data-submit]").forEach(el=>el.onclick=()=>{
+    const ta=document.querySelector('[data-draft="'+el.dataset.submit+'"]');
+    if(ta) S.drafts[el.dataset.submit]=ta.value;
+    submitResponse(el.dataset.submit);
+  });
+  document.querySelectorAll("[data-draft]").forEach(el=>el.oninput=()=>{S.drafts[el.dataset.draft]=el.value;});
+  document.querySelectorAll("[data-rmrole]").forEach(el=>el.onclick=()=>{captureSetup();S.config.roles=S.config.roles.filter(r=>r!==el.dataset.rmrole);render();});
+  document.querySelectorAll("[data-rmteam]").forEach(el=>el.onclick=()=>{captureSetup();S.config.teams=S.config.teams.filter(t=>t!==el.dataset.rmteam);render();});
+  const ar=$("#addRole"); if(ar) ar.onkeydown=e=>{if(e.key==="Enter"&&ar.value.trim()){captureSetup();S.config.roles.push(ar.value.trim());render();}};
+  const at=$("#addTeam"); if(at) at.onkeydown=e=>{if(e.key==="Enter"&&at.value.trim()){captureSetup();S.config.teams.push(at.value.trim());render();}};
+  ["gChannel","gSender","gScenario","gPreview"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.onchange=el.oninput=captureFire;
+  });
+  const ctx=$("#cfgCtx"); if(ctx) ctx.oninput=()=>{S.config.scenario_context=ctx.value;};
+}
+function captureFire(){
+  const g=S.gen;
+  const c=$("#gChannel"); if(c)g.channel=c.value;
+  const s=$("#gSender"); if(s)g.sender=s.value;
+  const sc=$("#gScenario"); if(sc)g.scenario=sc.value;
+  const p=$("#gPreview"); if(p)g.preview=p.value;
+}
+function captureSetup(){ const ctx=$("#cfgCtx"); if(ctx)S.config.scenario_context=ctx.value; }
+
+async function action(a){
+  if(a==="gm"){
+    S.mode="gm";
+    try{ await loadConfig(); await gmFetch(); }catch(e){ toast("Database error: "+e.message,"err"); }
+    gmSubscribe(); render();
+  }
+  else if(a==="student"){
+    S.mode="student";
+    try{ await loadConfig(); }catch(e){ toast("Database error: "+e.message,"err"); }
+    if(S.team&&S.role){ await studentFetch(); studentSubscribe(); }
+    render();
+  }
+  else if(a==="enter"){
+    const t=$("#selTeam").value, r=$("#selRole").value;
+    if(!t||!r) return;
+    S.team=t; S.role=r;
+    try{ sessionStorage.setItem("crisis_identity",JSON.stringify({team:t,role:r})); }catch(e){}
+    await studentFetch(); studentSubscribe(); render();
+  }
+  else if(a==="switch"){ S.team=null;S.role=null;S.events=[];S.submitted={};try{sessionStorage.removeItem("crisis_identity");}catch(e){} clearSubs(); render(); }
+  else if(a==="back"){ S.mode=null; clearSubs(); render(); }
+  else if(a==="saveKey"){
+    const v=$("#apiKey").value.trim(); if(!v)return;
+    S.apiKey=v; try{sessionStorage.setItem("crisis_api_key",v);}catch(e){}
+    toast("API key set for this tab."); render();
+  }
+  else if(a==="generate"){ captureFire(); generate(); }
+  else if(a==="closePreview"){ S.gen.preview=null; render(); }
+  else if(a==="pubNow"){ captureFire(); publish(false); }
+  else if(a==="pubDraft"){ captureFire(); publish(true); }
+  else if(a==="saveConfig"){ captureSetup(); saveConfig(); }
+  else if(a==="reset"){ resetSession(); }
+  else if(a==="csv"){ exportCSV(); }
+}
+
+/* ───────────────────────── BOOT ───────────────────────── */
+render();
+sysCheck();
+</script>
+</body>
+</html>
